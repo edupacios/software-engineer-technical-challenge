@@ -25,9 +25,11 @@ export default function App() {
   }, [])
 
   const handleCheckboxChange = (task: Task, completed: Task['completed']) => {
-    // TO-DO: Persist the changes to the database
-    setTasks(tasks.map(t => (t.id === task.id ? { ...t, completed } : t)))
-  }
+    fetch(`http://localhost:1984/tasks/${task.id}`, { method: 'PATCH', body: JSON.stringify({ ...task, completed })}).then(res => {
+        return res.json();
+    }).then(() => {
+        setTasks(tasks.map(t => (t.id === task.id ? { ...t, completed } : t)))
+    });
 
   const handleDeleteTask = (task: Task) => {
     fetch(`http://localhost:1984/tasks/${task.id}`, {

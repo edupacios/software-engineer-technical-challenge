@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { Request, ResponseToolkit, Server } from '@hapi/hapi'
-import { PrismaClient } from '@prisma/client'
+import {PrismaClient, Task} from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -54,10 +54,18 @@ const init = async () => {
     method: ['PUT', 'PATCH'],
     path: '/tasks/{id}',
     handler: async (request: Request, h: ResponseToolkit) => {
-      // TO-DO: Implement the update task endpoint
-      throw new Error('Not implemented')
-    },
-  })
+      const payload: Task = request.payload as Task;
+      console.log(payload);
+      if (!Number(request.params.id)) {
+        throw new Error('Payload is required');
+      }
+
+      return await prisma.task.update({
+          where: { id: Number(request.params.id) },
+          data: { completed: payload.completed }
+        });
+    }
+  });
 
   await server.start()
   console.log('Server running on %s', server.info.uri)
