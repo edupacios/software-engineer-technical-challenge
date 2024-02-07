@@ -4,47 +4,85 @@ import Checkbox from '@mui/joy/Checkbox'
 import IconButton from '@mui/joy/IconButton'
 import List from '@mui/joy/List'
 import ListDivider from '@mui/joy/ListDivider'
-import ListItem from '@mui/joy/ListItem'
 import Stack from '@mui/joy/Stack'
 import Typography from '@mui/joy/Typography'
 import { Task } from '@prisma/client'
 import { Fragment, useEffect, useState } from 'react'
+import { z } from 'zod'
+import {ListItem} from "@mui/joy";
+
+const TaskSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  completed: z.boolean(),
+})
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([])
 
   useEffect(() => {
-    fetch('http://localhost:1984/tasks')
+    fetch('http://localhost:1984/tasks', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
       .then(res => {
         return res.json()
       })
       .then(data => {
         // TO-DO: How to guarantee that data is an array of Task?
-        setTasks(data as Task[]);
+        setTasks(data as Task[])
       })
   }, [])
 
-  const handleCheckboxChange = (task: Task, completed: Task['completed']) => {
-    console.log(completed);
+  const handleCreateTask = () => {
+    const task = {
+      title: prompt(),
+    }
+
+    fetch(`http://localhost:1984/tasks`, {
+      method: 'post',
+      body: JSON.stringify(task),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(async res => {
+        return TaskSchema.parse(await res.json())
+      })
+      .then((task: Task): void => {
+        setTasks([...tasks, task])
+      })
+  }
+
+  const handleUpdateTask = (task: Task, completed: Task['completed']) => {
     fetch(`http://localhost:1984/tasks/${task.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({...task, completed})
-    }).then(res => {
-      return res.json();
-    }).then(() => {
-      setTasks(tasks.map((t: Task): Task => (t.id === task.id ? {...t, completed} : t)))
-    });
+      method: 'put',
+      body: JSON.stringify({ ...task, completed }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(async res => {
+        return TaskSchema.parse(await res.json())
+      })
+      .then((task: Task): void => {
+        setTasks(tasks.map(t => (t.id === task.id ? { ...t, completed } : t)))
+      })
   }
 
   const handleDeleteTask = (task: Task) => {
     fetch(`http://localhost:1984/tasks/${task.id}`, {
       method: 'delete',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
-      .then(res => {
-        return res.json()
+      .then(async res => {
+        return TaskSchema.parse(await res.json())
       })
-      .then(() => {
-        setTasks([...tasks.filter(t => t.id !== task.id)])
+      .then((task: Task): void => {
+        setTasks([...tasks.filter((t: Task) => t.id !== task.id)])
       })
   }
 
@@ -65,7 +103,8 @@ export default function App() {
           borderRadius: 'sm',
           width: '100%',
         }}>
-        {tasks.map((task: Task, index: number) => (
+
+        { tasks.map((task: Task, index: number) => (
           <Fragment key={task.id}>
             {index > 0 && <ListDivider />}
             <ListItem
@@ -85,16 +124,13 @@ export default function App() {
                   textDecoration: task.completed ? 'line-through' : 'none',
                 }}
                 checked={task.completed}
-                onChange={event =>
-                  handleCheckboxChange(task, event.target.checked)
-                }
+                onChange={event => handleUpdateTask(task, event.target.checked)}
               />
             </ListItem>
           </Fragment>
         ))}
       </List>
-      <Button fullWidth>
-        {/* TO-DO: Implement the new task feature */}
+      <Button fullWidth onClick={() => handleCreateTask()}>
         New Task
       </Button>
     </Stack>
