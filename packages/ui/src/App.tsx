@@ -9,12 +9,23 @@ import Stack from '@mui/joy/Stack'
 import Typography from '@mui/joy/Typography'
 import { Task } from '@prisma/client'
 import { Fragment, useEffect, useState } from 'react'
+import { z } from 'zod'
+
+const TaskSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  completed: z.boolean(),
+})
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([])
 
   useEffect(() => {
-    fetch('http://localhost:1984/tasks')
+    fetch('http://localhost:1984/tasks', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
       .then(res => {
         return res.json()
       })
@@ -24,21 +35,53 @@ export default function App() {
       })
   }, [])
 
-  const handleCheckboxChange = (task: Task, completed: Task['completed']) => {
-    fetch(`http://localhost:1984/tasks/${task.id}`, { method: 'PATCH', body: JSON.stringify({ ...task, completed })}).then(res => {
-        return res.json();
-    }).then(() => {
+  const handleCreateTask = () => {
+    const task = {
+      title: prompt(),
+    }
+
+    fetch(`http://localhost:1984/tasks`, {
+      method: 'post',
+      body: JSON.stringify(task),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(async res => {
+        return TaskSchema.parse(await res.json())
+      })
+      .then(task => {
+        setTasks([...tasks, task])
+      })
+  }
+
+  const handleUpdateTask = (task: Task, completed: Task['completed']) => {
+    fetch(`http://localhost:1984/tasks/${task.id}`, {
+      method: 'put',
+      body: JSON.stringify({ ...task, completed }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(async res => {
+        return TaskSchema.parse(await res.json())
+      })
+      .then(task => {
         setTasks(tasks.map(t => (t.id === task.id ? { ...t, completed } : t)))
-    });
+      })
+  }
 
   const handleDeleteTask = (task: Task) => {
     fetch(`http://localhost:1984/tasks/${task.id}`, {
       method: 'delete',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
-      .then(res => {
-        return res.json()
+      .then(async res => {
+        return TaskSchema.parse(await res.json())
       })
-      .then(() => {
+      .then(task => {
         setTasks([...tasks.filter(t => t.id !== task.id)])
       })
   }
@@ -80,16 +123,13 @@ export default function App() {
                   textDecoration: task.completed ? 'line-through' : 'none',
                 }}
                 checked={task.completed}
-                onChange={event =>
-                  handleCheckboxChange(task, event.target.checked)
-                }
+                onChange={event => handleUpdateTask(task, event.target.checked)}
               />
             </ListItem>
           </Fragment>
         ))}
       </List>
-      <Button fullWidth>
-        {/* TO-DO: Implement the new task feature */}
+      <Button fullWidth onClick={() => handleCreateTask()}>
         New Task
       </Button>
     </Stack>
