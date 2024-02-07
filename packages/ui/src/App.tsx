@@ -20,16 +20,21 @@ export default function App() {
       })
       .then(data => {
         // TO-DO: How to guarantee that data is an array of Task?
-        setTasks(data)
+        setTasks(data as Task[]);
       })
   }, [])
 
   const handleCheckboxChange = (task: Task, completed: Task['completed']) => {
-    fetch(`http://localhost:1984/tasks/${task.id}`, { method: 'PATCH', body: JSON.stringify({ ...task, completed })}).then(res => {
-        return res.json();
+    console.log(completed);
+    fetch(`http://localhost:1984/tasks/${task.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({...task, completed})
+    }).then(res => {
+      return res.json();
     }).then(() => {
-        setTasks(tasks.map(t => (t.id === task.id ? { ...t, completed } : t)))
+      setTasks(tasks.map((t: Task): Task => (t.id === task.id ? {...t, completed} : t)))
     });
+  }
 
   const handleDeleteTask = (task: Task) => {
     fetch(`http://localhost:1984/tasks/${task.id}`, {
@@ -60,7 +65,7 @@ export default function App() {
           borderRadius: 'sm',
           width: '100%',
         }}>
-        {tasks.map((task, index) => (
+        {tasks.map((task: Task, index: number) => (
           <Fragment key={task.id}>
             {index > 0 && <ListDivider />}
             <ListItem

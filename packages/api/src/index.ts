@@ -55,15 +55,15 @@ const init = async () => {
     path: '/tasks/{id}',
     handler: async (request: Request, h: ResponseToolkit) => {
       const payload: Task = request.payload as Task;
-      console.log(payload);
+
       if (!Number(request.params.id)) {
-        throw new Error('Payload is required');
+        throw new Error('Id is required');
       }
 
-      return await prisma.task.update({
-          where: { id: Number(request.params.id) },
-          data: { completed: payload.completed }
-        });
+      return prisma.task.update({
+        where: {id: Number(request.params.id)},
+        data: { completed: payload.completed }
+      });
     }
   });
 
