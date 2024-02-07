@@ -1,9 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { Request, ResponseToolkit, Server } from '@hapi/hapi'
-import {PrismaClient, Task} from '@prisma/client'
+import { PrismaClient, Task } from '@prisma/client'
+import { z } from 'zod'
 
 const prisma = new PrismaClient()
+
+const TaskSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  completed: z.boolean(),
+})
+
+const NewTaskSchema = TaskSchema.extend({
+  id: TaskSchema.shape.id.optional(),
+  completed: TaskSchema.shape.completed.optional(),
+})
 
 const init = async () => {
   const server: Server = new Server({
@@ -44,8 +56,10 @@ const init = async () => {
     method: ['POST'],
     path: '/tasks',
     handler: async (request: Request, h: ResponseToolkit) => {
-      // TO-DO: Implement the create task endpoint
-      throw new Error('Not implemented')
+      const task = NewTaskSchema.parse(request.payload)
+      return await prisma.task.create({
+        data: task as Task,
+      })
     },
   })
 
@@ -54,18 +68,13 @@ const init = async () => {
     method: ['PUT', 'PATCH'],
     path: '/tasks/{id}',
     handler: async (request: Request, h: ResponseToolkit) => {
-      const payload: Task = request.payload as Task;
-      console.log(payload);
-      if (!Number(request.params.id)) {
-        throw new Error('Payload is required');
-      }
-
+      const task = TaskSchema.parse(request.payload)
       return await prisma.task.update({
-          where: { id: Number(request.params.id) },
-          data: { completed: payload.completed }
-        });
-    }
-  });
+        where: { id: Number(request.params.id) },
+        data: { completed: task.completed },
+      })
+    },
+  })
 
   await server.start()
   console.log('Server running on %s', server.info.uri)
