@@ -31,7 +31,7 @@ export default function App() {
       })
       .then(data => {
         // TO-DO: How to guarantee that data is an array of Task?
-        setTasks(data)
+        setTasks(data as Task[])
       })
   }, [])
 
@@ -50,7 +50,7 @@ export default function App() {
       .then(async res => {
         return TaskSchema.parse(await res.json())
       })
-      .then(task => {
+      .then((task: Task): void => {
         setTasks([...tasks, task])
       })
   }
@@ -66,7 +66,7 @@ export default function App() {
       .then(async res => {
         return TaskSchema.parse(await res.json())
       })
-      .then(task => {
+      .then((task: Task): void => {
         setTasks(tasks.map(t => (t.id === task.id ? { ...t, completed } : t)))
       })
   }
@@ -81,8 +81,8 @@ export default function App() {
       .then(async res => {
         return TaskSchema.parse(await res.json())
       })
-      .then(task => {
-        setTasks([...tasks.filter(t => t.id !== task.id)])
+      .then((task: Task): void => {
+        setTasks([...tasks.filter((t: Task) => t.id !== task.id)])
       })
   }
 
@@ -103,7 +103,7 @@ export default function App() {
           borderRadius: 'sm',
           width: '100%',
         }}>
-        {tasks.map((task, index) => (
+        { tasks.map((task: Task, index: number) => (
           <Fragment key={task.id}>
             {index > 0 && <ListDivider />}
             <ListItem

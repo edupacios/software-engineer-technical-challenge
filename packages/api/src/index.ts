@@ -36,7 +36,7 @@ const init = async () => {
     method: 'GET',
     path: '/tasks',
     handler: async (request: Request, h: ResponseToolkit) => {
-      return await prisma.task.findMany()
+      return prisma.task.findMany()
     },
   })
 
@@ -45,8 +45,8 @@ const init = async () => {
     method: 'DELETE',
     path: '/tasks/{id}',
     handler: async (request: Request, h: ResponseToolkit) => {
-      return await prisma.task.delete({
-        where: { id: Number(request.params.id) },
+      return prisma.task.delete({
+        where: { id: Number(request.params.id) }
       })
     },
   })
@@ -57,7 +57,7 @@ const init = async () => {
     path: '/tasks',
     handler: async (request: Request, h: ResponseToolkit) => {
       const task = NewTaskSchema.parse(request.payload)
-      return await prisma.task.create({
+      return prisma.task.create({
         data: task as Task,
       })
     },
@@ -68,8 +68,8 @@ const init = async () => {
     method: ['PUT', 'PATCH'],
     path: '/tasks/{id}',
     handler: async (request: Request, h: ResponseToolkit) => {
-      const task = TaskSchema.parse(request.payload)
-      return await prisma.task.update({
+      const task: Task = <Task>TaskSchema.parse(request.payload)
+      return prisma.task.update({
         where: { id: Number(request.params.id) },
         data: { completed: task.completed },
       })
